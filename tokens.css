@@ -1,0 +1,144 @@
+/* ============================================================
+   SUNSTONE DESIGN TOKENS
+   Single source of truth for colors, typography, and spacing.
+   Import this in every page:
+     <link rel="stylesheet" href="tokens.css">
+   ============================================================ */
+
+/* --- Fonts ------------------------------------------------- */
+
+@font-face {
+  font-family: "DM Sans";
+  src: url("fonts/DMSans-VariableFont_opsz_wght.ttf") format("truetype-variations");
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "DM Sans";
+  src: url("fonts/DMSans-Italic-VariableFont_opsz_wght.ttf") format("truetype-variations");
+  font-weight: 100 1000;
+  font-style: italic;
+  font-display: swap;
+}
+/* Source Serif 4 is loaded from Google Fonts (no brand file). */
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap");
+
+/* --- Tokens ------------------------------------------------ */
+
+:root {
+  /* ===== Brand / logo colors ===== */
+  --color-orange:         #F58221;   /* Logo Orange — primary accent */
+  --color-orange-alt:     #FF9055;   /* Softer orange for hovers / tints */
+  --color-yellow:         #FAD604;   /* Logo Yellow */
+  --color-navy:           #0E1937;   /* Dark Blue — primary ink on light */
+
+  /* ===== Cool secondaries ===== */
+  --color-cyan:           #46C5DE;   /* Cool 2 */
+  --color-yellow-acid:    #EFDE0F;   /* Cool 4 */
+  --color-teal:           #266680;   /* Cool 6 */
+
+  /* ===== Neutrals ===== */
+  --color-white:          #FFFFFF;
+  --color-warm-grey:      #A49A87;
+  --color-cool-grey:      #CBCBCB;
+  --color-cool-grey-l:    #F4F4F4;   /* Page bg on light */
+  --color-warm-grey-l:    #E0D8C9;   /* Warm paper bg */
+  --color-navy-40:        #9FA3AF;   /* Dark Blue 40% */
+
+  /* ===== Tints ===== */
+  --color-orange-20:      #FDE6D3;
+  --color-yellow-40:      #FDEF9B;
+
+  /* ===== Semantic roles ===== */
+  --bg:                   var(--color-cool-grey-l);
+  --bg-card:              var(--color-white);
+  --ink:                  var(--color-navy);
+  --ink-muted:            #6B7280;
+  --border:               #E5E7EB;
+  --accent:               var(--color-orange);
+
+  /* ===== Data-viz ramps ===== */
+  /* Warm sequential (low → high) — use on light or dark backgrounds */
+  --ramp-warm-0:          #FAD604;
+  --ramp-warm-1:          #F58221;
+  --ramp-warm-2:          #9A3412;
+  /* Cool sequential */
+  --ramp-cool-0:          #B8EEF7;
+  --ramp-cool-1:          #46C5DE;
+  --ramp-cool-2:          #266680;
+
+  /* ===== Typography ===== */
+  --font-serif:           "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-sans:            "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Brand type scale: pt → px (1pt = 1.333px) */
+  --fs-h1:                24px;   /* H1 · 18pt · Source Serif 4 Regular */
+  --fs-h2:                21px;   /* H2 · 16pt · Source Serif 4 Regular */
+  --fs-h3:                20px;   /* H3 · 15pt · Source Serif 4 Regular */
+  --fs-h4:                19px;   /* H4 · 14pt · Source Serif 4 Regular */
+  --fs-h5:                16px;   /* H5 · 12pt · Source Serif 4 Regular */
+  --fs-h6:                15px;   /* H6 · 11pt · Source Serif 4 Regular */
+  --fs-body:              13px;   /* Body · 10pt · DM Sans Regular */
+  --fs-micro:             11px;   /* Eyebrows / labels · DM Sans 500/600 */
+
+  /* ===== Spacing scale (4px base) ===== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ===== Radii ===== */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+}
+
+/* --- Base element styles ---------------------------------- */
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 400;  /* All headings are Regular per brand spec */
+  letter-spacing: 0;
+  margin: 0;
+  color: var(--ink);
+}
+h1 { font-size: var(--fs-h1); line-height: 1.2; }
+h2 { font-size: var(--fs-h2); line-height: 1.2; }
+h3 { font-size: var(--fs-h3); line-height: 1.25; }
+h4 { font-size: var(--fs-h4); line-height: 1.3; }
+h5 { font-size: var(--fs-h5); line-height: 1.3; }
+h6 { font-size: var(--fs-h6); line-height: 1.35; }
+
+/* Eyebrow / kicker — small uppercase label above a heading */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-orange);
+}
+
+/* Muted body copy */
+.muted { color: var(--ink-muted); }
+
+/* Numeric tabular display (for dashboard values) */
+.tabular { font-variant-numeric: tabular-nums; }

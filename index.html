@@ -1,0 +1,1874 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Census · Sunstone Institute</title>
+  <meta name="description" content="A global view of the number of schools per country, across two collections (2024 and 2026). An independent analysis by Sunstone Institute." />
+  <meta property="og:title" content="School Census · Sunstone Institute" />
+  <meta property="og:description" content="How many schools does each country have, and how did each grow or shrink? An independent analysis by Sunstone Institute." />
+  <meta property="og:url" content="https://sunstone.institute/" />
+  <link rel="icon" href="sunstone-logo.png" type="image/png" />
+  <!-- Sunstone Design System tokens: fonts (DM Sans + Source Serif 4) + brand colours -->
+  <link rel="stylesheet" href="tokens.css" />
+  <!-- JetBrains Mono for tabular numerics (not in design system tokens, kept for data readability) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* -------------------- brand palette — aliases onto Sunstone tokens -------------------- */
+    :root {
+      --dark-blue:       var(--color-navy);
+      --logo-yellow:     var(--color-yellow);
+      --yellow-40:       var(--color-yellow-40);
+      --logo-orange:     var(--color-orange);
+      --orange-20:       var(--color-orange-20);
+      --orange-alt:      var(--color-orange-alt);
+      --cool-2:          var(--color-cyan);
+      --cool-4:          var(--color-yellow-acid);
+      --cool-6:          var(--color-teal);
+      --cool-grey:       var(--color-cool-grey);
+      --cool-grey-light: var(--color-cool-grey-l);
+      --warm-grey:       var(--color-warm-grey);
+    }
+
+    /* Dashboard-scoped type-scale override — bumps every DS token by
+       ~20% so the whole dashboard reads more accessibly. tokens.css
+       stays untouched. */
+    :root {
+      --fs-body:  16px;  /* was 13 */
+      --fs-micro: 13px;  /* was 11 */
+      --fs-h6:    18px;  /* was 15 */
+      --fs-h5:    19px;  /* was 16 */
+      --fs-h4:    22px;  /* was 19 */
+      --fs-h3:    24px;  /* was 20 */
+      --fs-h2:    25px;  /* was 21 */
+      --fs-h1:    28px;  /* was 24 */
+    }
+
+    /* -------------------- light theme (default) --------------------
+       Reference D: "Warm Ramp on Light Globe". Page BG pure white; the
+       globe's ocean is Cool Grey L (#F4F4F4) so the sphere is visible as
+       a subtle disc. Countries sit just a shade darker than the ocean so
+       the continents read without competing with the amount bubbles. */
+    :root,
+    body[data-theme="light"] {
+      --bg-page:        var(--color-white);                /* #FFFFFF dashboard BG */
+      --bg-soft:        var(--color-cool-grey-l);
+      --ocean:          var(--color-cool-grey-l);          /* #F4F4F4 globe surface */
+      --country:        var(--color-warm-grey-l);          /* #E0D8C9 warm-paper continents */
+      --country-hover:  #c8bda5;
+      --border:         rgba(14, 25, 55, 0.06);
+      --border-hover:   rgba(14, 25, 55, 0.22);
+
+      /* Ink scale — tuned for WCAG AA on --bg-page (white) and on the
+         glass-backed chrome. ink-3/ink-4 are bumped so the small
+         uppercase labels (stats-pill, legend, year-chip, footer,
+         no-report placeholder) stay comfortably readable. */
+      --ink-1: var(--color-navy);                  /* navy on white → ~15.5:1 */
+      --ink-2: rgba(14, 25, 55, 0.82);             /* body muted    →  ~9:1   */
+      --ink-3: rgba(14, 25, 55, 0.66);             /* eyebrows      →  ~6:1   */
+      --ink-4: rgba(14, 25, 55, 0.52);             /* tiny labels   →  ~4.6:1 */
+      --ink-5: rgba(14, 25, 55, 0.12);             /* hairlines (non-text) */
+
+      --glass-bg:     rgba(255, 255, 255, 0.82);
+      --glass-br:     rgba(14, 25, 55, 0.08);
+      --glass-shadow: 0 1px 2px rgba(14, 25, 55, 0.04),
+                      0 8px 28px rgba(14, 25, 55, 0.08);
+
+      --bg-gradient:  var(--bg-page);                      /* solid, no gradient */
+
+      /* bubble palette — LIGHT mode: 2024 cyan, 2026 navy */
+      --ring-2024-fill:   rgba(70, 197, 222, 0.85);
+      --ring-2024-stroke: #46c5de;
+      --ring-2024-shadow: rgba(70, 197, 222, 0.55);
+      --ring-2024-label:  var(--color-teal);
+
+      --ring-2026-fill:   rgba(14, 25, 55, 0.85);
+      --ring-2026-stroke: #0e1937;
+      --ring-2026-shadow: rgba(14, 25, 55, 0.55);
+      --ring-2026-label:  var(--color-navy);
+    }
+
+    /* -------------------- dark theme --------------------
+       Reference C: "Full Spectrum (Yellow → Orange → Dark)". Ocean switches
+       to navy-40 grey-blue; bubbles switch to warm ramp (yellow → orange)
+       so they stand out against the lighter ocean. */
+    body[data-theme="dark"] {
+      --bg-page:        var(--color-navy);                 /* #0E1937 dashboard BG */
+      --bg-soft:        #132041;
+      --ocean:          #5f6472;                           /* slate grey-blue globe surface */
+      --country:        var(--color-navy);                 /* #0E1937 continents — same as page */
+      --country-hover:  #1a274e;
+      --border:         rgba(255, 255, 255, 0.06);
+      --border-hover:   rgba(255, 255, 255, 0.35);
+
+      /* Ink scale — tuned for WCAG AA on --bg-page (navy) and on the
+         navy-tinted glass chrome. Matches the light-mode steps so
+         layout-level colour use stays consistent across themes. */
+      --ink-1: var(--color-white);                 /* white on navy  → ~15:1   */
+      --ink-2: rgba(255, 255, 255, 0.84);          /* body muted    →  ~10:1  */
+      --ink-3: rgba(255, 255, 255, 0.66);          /* eyebrows      →  ~6.5:1 */
+      --ink-4: rgba(255, 255, 255, 0.52);          /* tiny labels   →  ~4.7:1 */
+      --ink-5: rgba(255, 255, 255, 0.14);          /* hairlines (non-text) */
+
+      --glass-bg:     rgba(14, 25, 55, 0.78);
+      --glass-br:     rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.3),
+                      0 14px 40px rgba(0, 0, 0, 0.45);
+
+      --bg-gradient:  var(--bg-page);                      /* solid navy, no gradient */
+
+      /* bubble palette — DARK mode: 2024 yellow, 2026 orange */
+      --ring-2024-fill:   rgba(250, 214, 4, 0.85);
+      --ring-2024-stroke: #fad604;
+      --ring-2024-shadow: rgba(250, 214, 4, 0.5);
+      --ring-2024-label:  #fad604;
+
+      --ring-2026-fill:   rgba(245, 130, 33, 0.85);
+      --ring-2026-stroke: #f58221;
+      --ring-2026-shadow: rgba(245, 130, 33, 0.55);
+      --ring-2026-label:  #f58221;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-page);
+      color: var(--ink-1);
+      font-family: var(--font-sans);       /* DM Sans per Sunstone DS */
+      font-size: var(--fs-body);
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      letter-spacing: 0;
+      overflow: hidden;
+      transition: background 400ms ease, color 400ms ease;
+    }
+
+    /* Sunstone type hierarchy — Source Serif 4 Regular for every heading
+       (brand spec: all headings are 400 weight, never bold). Use the
+       tokens.css scale so sizes track the design system. */
+    .brand-title,
+    .detail-title,
+    .delta-big,
+    .year-amount {
+      font-family: var(--font-serif);
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: var(--bg-gradient);
+      z-index: 0;
+      transition: background 400ms ease;
+    }
+
+    #globe {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* -------------------- top bar -------------------- */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 28px;
+      pointer-events: none;
+    }
+    .topbar > * { pointer-events: auto; }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    /* dark-theme inverts text only; the sun logo stays */
+    body[data-theme="dark"] .brand-logo { filter: brightness(1.05); }
+
+    .brand-title {
+      /* DS H5 size, serif — inherited from type-hierarchy block above */
+      font-size: var(--fs-h5);
+      color: var(--ink-1);
+      line-height: 1.15;
+    }
+    .brand-sub {
+      /* DS eyebrow — DM Sans 600, uppercase, orange */
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: var(--fs-micro);
+      color: var(--color-orange);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .ctrls {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-br);
+      border-radius: 100px;
+      backdrop-filter: blur(22px) saturate(180%);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      box-shadow: var(--glass-shadow);
+    }
+    .ctrl-btn {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: 0;
+      border-radius: 50%;
+      color: var(--ink-3);
+      cursor: pointer;
+      transition: color 160ms, background 160ms;
+    }
+    .ctrl-btn:hover {
+      color: var(--ink-1);
+      background: rgba(127, 127, 127, 0.1);
+    }
+    .ctrl-btn.active {
+      color: var(--logo-orange);
+      background: rgba(245, 130, 33, 0.1);
+    }
+    .ctrl-btn svg { width: 14px; height: 14px; }
+
+    /* instant custom tooltip for icon buttons — beats the 1s browser-native
+       delay on `title` attributes, especially on SVG children */
+    .ctrl-btn::before {
+      content: attr(aria-label);
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      padding: 6px 10px;
+      background: rgba(14, 25, 55, 0.94);
+      color: #ffffff;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(2px);
+      transition: opacity 140ms ease, transform 140ms ease;
+      box-shadow: 0 4px 14px rgba(14, 25, 55, 0.18);
+      z-index: 30;
+    }
+    .ctrl-btn:hover::before,
+    .ctrl-btn:focus-visible::before {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 120ms;   /* tiny delay so it doesn't flicker on passes */
+    }
+
+    .search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-br);
+      border-radius: 100px;
+      backdrop-filter: blur(22px) saturate(180%);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      box-shadow: var(--glass-shadow);
+      transition: border-color 160ms;
+      overflow: visible;
+      width: 240px;
+      height: 40px;
+    }
+    .search-wrap:focus-within {
+      border-color: rgba(70, 197, 222, 0.4);
+    }
+    .search-wrap .search-icon {
+      position: absolute;
+      left: 13px;
+      width: 14px;
+      height: 14px;
+      color: var(--ink-3);
+      pointer-events: none;
+    }
+    .search-wrap:focus-within .search-icon { color: var(--cool-6); }
+    .search {
+      width: 100%;
+      padding: 0 14px 0 36px;
+      height: 40px;
+      background: transparent;
+      border: 0;
+      color: var(--ink-1);
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+    }
+    .search::placeholder { color: var(--ink-4); }
+
+    .search-results {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 280px;
+      max-height: 300px;
+      overflow-y: auto;
+      background: var(--glass-bg);
+      backdrop-filter: blur(22px) saturate(180%);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      border: 1px solid var(--glass-br);
+      border-radius: 14px;
+      box-shadow: var(--glass-shadow);
+      display: none;
+    }
+    .search-results.open { display: block; }
+    .search-result {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      font-size: 15px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--ink-5);
+      transition: background 120ms;
+    }
+    .search-result:last-child { border-bottom: none; }
+    .search-result:hover { background: rgba(127, 127, 127, 0.1); }
+    .search-result .flag { margin-right: 8px; font-size: 17px; }
+    .search-result .code {
+      color: var(--ink-4);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* -------------------- stats / legend -------------------- */
+    .stats-pill {
+      position: fixed;
+      left: 28px;
+      bottom: 24px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 10px 16px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-br);
+      border-radius: 100px;
+      backdrop-filter: blur(22px) saturate(180%);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      box-shadow: var(--glass-shadow);
+      font-size: 14px;
+    }
+    .stats-pill .n {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      color: var(--ink-1);
+    }
+    .stats-pill .l {
+      color: var(--ink-4);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      margin-left: 5px;
+      text-transform: uppercase;
+    }
+    .stats-pill .sep {
+      width: 1px;
+      height: 12px;
+      background: var(--ink-5);
+    }
+    .stats-pill .delta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+    .stats-pill .delta.up   { color: var(--logo-orange); }
+    .stats-pill .delta.down { color: var(--cool-6); }
+    .stats-pill .delta.flat { color: var(--ink-3); }
+
+    .legend {
+      position: fixed;
+      right: 26px;
+      bottom: 22px;
+      z-index: 10;
+      padding: 12px 15px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-br);
+      border-radius: 14px;
+      backdrop-filter: blur(20px) saturate(170%);
+      -webkit-backdrop-filter: blur(20px) saturate(170%);
+      box-shadow: var(--glass-shadow);
+    }
+    .legend-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--ink-3);
+      text-transform: uppercase;
+      margin-bottom: 9px;
+    }
+    .legend-rings {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--ink-2);
+    }
+    .legend-ring-sample {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+    .legend-ring-sample .s-outer,
+    .legend-ring-sample .s-inner {
+      position: absolute;
+      border-radius: 50%;
+    }
+    .legend-ring-sample .s-outer {
+      inset: 0;
+      background: var(--ring-2024-fill);
+      border: 1.5px solid var(--ring-2024-stroke);
+    }
+    .legend-ring-sample .s-inner {
+      inset: 7px;
+      background: var(--ring-2026-fill);
+      border: 1.5px solid var(--ring-2026-stroke);
+    }
+    .legend-ring-lbl { line-height: 1.45; font-size: 13px; }
+    .legend-ring-lbl b { font-weight: 600; }
+    .legend-ring-lbl .v2024 { color: var(--ring-2024-label); }
+    .legend-ring-lbl .v2026 { color: var(--ring-2026-label); }
+    .legend-ring-lbl .sub {
+      color: var(--ink-4);
+      font-size: 12px;
+      letter-spacing: 0.01em;
+    }
+    /* tiny colour swatches next to each year label */
+    .legend-ring-lbl .swatch {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+    }
+    .legend-ring-lbl .swatch.y24 {
+      background: var(--ring-2024-fill);
+      border: 1.5px solid var(--ring-2024-stroke);
+    }
+    .legend-ring-lbl .swatch.y26 {
+      background: var(--ring-2026-fill);
+      border: 1.5px solid var(--ring-2026-stroke);
+    }
+
+    /* -------------------- detail card -------------------- */
+    .detail {
+      position: fixed;
+      right: 28px;
+      top: 50%;
+      transform: translate(40px, -50%);
+      z-index: 20;
+      width: 380px;
+      max-height: 78vh;
+      overflow-y: auto;
+      background: var(--glass-bg);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--glass-br);
+      border-radius: 20px;
+      padding: 26px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 280ms cubic-bezier(0.2, 0.9, 0.3, 1),
+                  transform 320ms cubic-bezier(0.2, 0.9, 0.3, 1);
+      box-shadow: var(--glass-shadow);
+    }
+    .detail.open {
+      opacity: 1;
+      transform: translate(0, -50%);
+      pointer-events: auto;
+    }
+
+    .detail-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .detail-flag-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .detail-flag { font-size: 32px; line-height: 1; }
+    .detail-title {
+      /* DS H3, serif Regular (family/weight inherited) */
+      font-size: var(--fs-h3);
+      line-height: 1.2;
+      color: var(--ink-1);
+    }
+    .detail-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--ink-4);
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+    .detail-close {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      border: 1px solid var(--ink-5);
+      border-radius: 50%;
+      color: var(--ink-3);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 140ms;
+    }
+    .detail-close:hover {
+      color: var(--ink-1);
+      border-color: var(--ink-3);
+      background: rgba(127, 127, 127, 0.08);
+    }
+
+    .delta-hero {
+      margin: 22px 0 18px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .delta-hero.up   { background: rgba(245, 130, 33, 0.1); border: 1px solid rgba(245, 130, 33, 0.28); }
+    .delta-hero.down { background: rgba(38, 102, 128, 0.1); border: 1px solid rgba(38, 102, 128, 0.28); }
+    .delta-hero.flat { background: rgba(127, 127, 127, 0.06); border: 1px solid var(--ink-5); }
+
+    .delta-big {
+      /* DS H2 serif for the hero number — overrides the earlier JetBrains Mono */
+      font-family: var(--font-serif);
+      font-weight: 400;
+      font-size: var(--fs-h2);
+      letter-spacing: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .delta-hero.up   .delta-big { color: var(--logo-orange); }
+    .delta-hero.down .delta-big { color: var(--cool-6); }
+    .delta-hero.flat .delta-big { color: var(--ink-3); }
+
+    .delta-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-4);
+      margin-top: 4px;
+    }
+    .delta-abs {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      color: var(--ink-2);
+    }
+
+    /* mini line chart (drawer) */
+    .mini-chart {
+      margin: 0 0 16px;
+      padding: 14px 14px 10px;
+      border-radius: 14px;
+      background: rgba(127, 127, 127, 0.04);
+      border: 1px solid var(--ink-5);
+      color: var(--ink-1);
+    }
+    .mini-chart svg { display: block; width: 100%; height: auto; }
+    .mini-chart-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--ink-3);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .mini-chart-caption {
+      font-size: 12px;
+      color: var(--ink-4);
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    .year-block {
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      border-radius: 14px;
+      background: rgba(127, 127, 127, 0.04);
+      border: 1px solid var(--ink-5);
+      position: relative;
+    }
+    .year-block::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 16px; bottom: 16px;
+      width: 2px;
+      border-radius: 0 2px 2px 0;
+    }
+    .year-block.y24::before { background: var(--ring-2024-stroke); }
+    .year-block.y26::before { background: var(--ring-2026-stroke); }
+
+    .year-block-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .year-block-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+    .year-block.y24 .year-block-label { color: var(--ring-2024-label); }
+    .year-block.y26 .year-block-label { color: var(--ring-2026-label); }
+
+    .reported-year {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(127, 127, 127, 0.1);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-1);
+      letter-spacing: 0.01em;
+    }
+
+    .year-amount {
+      /* DS H1 serif for the headline number */
+      font-family: var(--font-serif);
+      font-weight: 400;
+      font-size: var(--fs-h1);
+      letter-spacing: 0;
+      color: var(--ink-1);
+      font-variant-numeric: tabular-nums;
+    }
+    .year-amount-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--ink-4);
+      margin-top: 2px;
+    }
+
+    .year-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 14px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--ink-5);
+    }
+    .year-breakdown .row {
+      grid-column: span 2;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .year-breakdown .k {
+      color: var(--ink-4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 12px;
+    }
+    .year-breakdown .v {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--ink-2);
+    }
+
+    .source {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--ink-5);
+      font-size: 13px;
+    }
+    .source a {
+      color: var(--cool-6);
+      text-decoration: none;
+      word-break: break-all;
+      transition: color 140ms;
+    }
+    .source a:hover { color: var(--logo-orange); }
+
+    .notes {
+      margin-top: 10px;
+      padding: 8px 11px;
+      font-size: 13px;
+      color: var(--ink-2);
+      background: rgba(245, 130, 33, 0.08);
+      border-left: 2px solid var(--logo-orange);
+      border-radius: 4px;
+      font-style: italic;
+    }
+
+    .q-chip {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-left: 6px;
+    }
+    /* quality chips — text darkened slightly so each label hits ≥4.5:1
+       against its own tinted background in light mode and its navy-glass
+       surface in dark mode */
+    .q-chip.good    { background: rgba(70, 197, 222, 0.2);  color: var(--cool-6); }
+    .q-chip.okay    { background: rgba(250, 214, 4, 0.28);  color: #5a4b00; }
+    .q-chip.recheck { background: rgba(245, 130, 33, 0.22); color: #a8500c; }
+    .q-chip.excel   { background: rgba(38, 102, 128, 0.2);  color: var(--cool-6); }
+    .q-chip.default { background: rgba(127, 127, 127, 0.12); color: var(--ink-3); }
+    body[data-theme="dark"] .q-chip.good,
+    body[data-theme="dark"] .q-chip.excel { color: var(--color-cyan); }
+    body[data-theme="dark"] .q-chip.okay  { color: #ffe75c; }
+    body[data-theme="dark"] .q-chip.recheck { color: var(--color-orange-alt); }
+
+    .anomaly-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      margin-left: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(245, 130, 33, 0.2);
+      color: #a8500c;
+      border-radius: 4px;
+    }
+    body[data-theme="dark"] .anomaly-badge { color: var(--color-orange-alt); }
+
+    /* -------------------- tooltip -------------------- */
+    .tip {
+      position: fixed;
+      z-index: 50;
+      pointer-events: none;
+      padding: 11px 14px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-br);
+      border-radius: 10px;
+      font-size: 14px;
+      box-shadow: var(--glass-shadow);
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 120ms, transform 120ms;
+      white-space: nowrap;
+    }
+    .tip.visible { opacity: 1; transform: translateY(0); }
+    .tip-country {
+      font-weight: 500;
+      color: var(--ink-1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .tip-row {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--ink-3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tip-row b { color: var(--ink-1); font-weight: 500; }
+    .tip-row .year-chip {
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(127, 127, 127, 0.12);
+      color: var(--ink-1);
+      font-size: 12px;
+    }
+    .tip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    /* -------------------- globe markers (concentric bubbles) -------------------- */
+    .marker {
+      position: relative;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+    .marker .ring {
+      position: absolute;
+      left: 0; top: 0;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      transition:
+        transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1),
+        filter 180ms ease;
+    }
+
+    /* Two solid overlapping disks per country. Smaller year on top.
+       Stroke colour identifies the collection:
+         2024 → pale yellow fill (#FDEF9B) + Logo Yellow stroke
+         2026 → pale cyan fill + Cool 2 stroke
+       Re-check quality swaps the stroke to dashed. */
+    .marker .ring.y24 {
+      background: var(--ring-2024-fill);
+      border: 2px solid var(--ring-2024-stroke);
+    }
+    .marker .ring.y26 {
+      background: var(--ring-2026-fill);
+      border: 2px solid var(--ring-2026-stroke);
+    }
+    .marker .ring.recheck { border-style: dashed; }
+
+    .marker.hover .ring {
+      transform: translate(-50%, -50%) scale(1.06);
+      filter: brightness(1.06) saturate(1.1);
+    }
+    .marker.hover .ring.y24 { box-shadow: 0 0 12px var(--ring-2024-shadow); }
+    .marker.hover .ring.y26 { box-shadow: 0 0 12px var(--ring-2026-shadow); }
+
+    /* -------------------- loader -------------------- */
+    .loading {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      z-index: 100;
+      background: var(--bg-page);
+      transition: opacity 500ms ease;
+    }
+    .loading.hide { opacity: 0; pointer-events: none; }
+    .loader-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--logo-yellow), var(--logo-orange));
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    .loader-text {
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--ink-4);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(0.6); opacity: 0.6; }
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(127, 127, 127, 0.25); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(127, 127, 127, 0.45); }
+
+    /* -------------------- footer strip -------------------- */
+    .app-footer {
+      position: fixed;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--ink-4);
+      letter-spacing: 0.02em;
+      padding: 6px 14px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-br);
+      border-radius: 100px;
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+    }
+    .app-footer a {
+      color: var(--ink-3);
+      text-decoration: none;
+      border-bottom: 1px dashed transparent;
+      transition: border-color 140ms, color 140ms;
+    }
+    .app-footer a:hover {
+      color: var(--logo-orange);
+      border-bottom-color: var(--logo-orange);
+    }
+    .app-footer .dot { color: var(--ink-5); }
+
+    /* -------------------- disclaimer / corrections card -------------------- */
+    .disclaimer {
+      position: fixed;
+      left: 50%;
+      bottom: 58px;
+      transform: translateX(-50%);
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 460px;
+      padding: 9px 14px 9px 12px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-br);
+      border-left: 3px solid var(--color-orange);
+      border-radius: 10px;
+      backdrop-filter: blur(18px) saturate(170%);
+      -webkit-backdrop-filter: blur(18px) saturate(170%);
+      box-shadow: var(--glass-shadow);
+      font-family: var(--font-sans);
+      font-size: var(--fs-micro);
+      line-height: 1.45;
+      color: var(--ink-2);
+    }
+    .disclaimer-icon {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--color-orange);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .disclaimer a {
+      color: var(--color-orange);
+      text-decoration: none;
+      border-bottom: 1px dashed currentColor;
+      transition: color 140ms, border-color 140ms;
+    }
+    .disclaimer a:hover {
+      color: var(--color-orange-alt);
+      border-color: var(--color-orange-alt);
+    }
+    .disclaimer b { font-weight: 600; color: var(--ink-1); }
+
+    @media (max-width: 720px) {
+      .detail, .legend, .app-footer, .disclaimer { display: none; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+
+  <div id="globe"></div>
+
+  <div class="topbar">
+    <a class="brand" href="https://sunstone.institute/" target="_blank" rel="noopener">
+      <img class="brand-logo" src="sunstone-logo.png" alt="Sunstone Institute" />
+      <div>
+        <div class="brand-title">School Census</div>
+        <div class="brand-sub">Sunstone Institute</div>
+      </div>
+    </a>
+
+    <div style="display:flex; gap: 10px; align-items: center;">
+      <div class="search-wrap" id="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" stroke-linecap="round" />
+        </svg>
+        <input class="search" id="search" type="text" placeholder="Search country…  (press /)" autocomplete="off" />
+        <div class="search-results" id="search-results"></div>
+      </div>
+
+      <div class="ctrls">
+        <button class="ctrl-btn active" id="btn-rotate" aria-label="Pause auto-rotation" title="Pause auto-rotation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M21 12a9 9 0 1 1-3-6.7" stroke-linecap="round" />
+            <path d="M21 4v5h-5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button class="ctrl-btn" id="btn-scale" aria-label="Toggle bubble scale (sqrt ↔ log)" title="Toggle bubble scale">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="7" cy="17" r="3" />
+            <circle cx="13" cy="14" r="5" />
+            <circle cx="19" cy="10" r="2" />
+          </svg>
+        </button>
+        <button class="ctrl-btn" id="btn-theme" aria-label="Switch to dark mode" title="Switch theme">
+          <!-- moon for light mode, sun for dark mode; swapped at runtime -->
+          <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke-linejoin="round" stroke-linecap="round" />
+          </svg>
+        </button>
+        <button class="ctrl-btn" id="btn-info" aria-label="About this dataset" title="About">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v.01M11 12h1v5h1" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-pill">
+    <span><span class="n" id="sp-countries">—</span><span class="l">countries</span></span>
+    <span class="sep"></span>
+    <span><span class="n" id="sp-total">—</span><span class="l">schools · 2026</span></span>
+    <span class="sep"></span>
+    <span class="delta" id="sp-delta">—</span>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title">Schools per country</div>
+    <div class="legend-rings">
+      <div class="legend-ring-sample">
+        <div class="s-outer"></div>
+        <div class="s-inner"></div>
+      </div>
+      <div class="legend-ring-lbl">
+        <span class="swatch y24"></span><b class="v2024">2024</b>
+        &nbsp;<span class="swatch y26"></span><b class="v2026">2026</b><br />
+        <span class="sub">Disk size = school count. Smaller year sits inside.</span>
+      </div>
+    </div>
+  </div>
+
+  <aside class="detail" id="detail"></aside>
+  <div class="tip" id="tip"></div>
+
+  <div class="disclaimer" role="note" aria-label="Corrections">
+    <span class="disclaimer-icon" aria-hidden="true">!</span>
+    <span>
+      <b>Spotted a mistake?</b>
+      This dataset is open for independent review. Please submit a correction via our
+      <a href="https://forms.gle/pyjhZLVHo5nhpKon9" target="_blank" rel="noopener">Form</a>.
+      Thanks!
+    </span>
+  </div>
+
+  <div class="app-footer">
+    <span>© 2026 Sunstone Institute</span>
+    <span class="dot">·</span>
+    <a href="methodology.html" target="_blank" rel="noopener">Methodology</a>
+    <span class="dot">·</span>
+    <span>Data <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></span>
+    <span class="dot">·</span>
+    <span id="footer-build-date">—</span>
+  </div>
+
+  <div class="loading" id="loading">
+    <div style="text-align: center">
+      <div class="loader-dot"></div>
+      <div class="loader-text">Rendering globe</div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/globe.gl@2.32.6/dist/globe.gl.min.js"></script>
+
+  <script>
+  // ============================================================
+  //   School Census · flat globe, brand palette, dark/light toggle
+  //   - ocean: Cool Grey Light (#F4F4F4) / Dark Blue (dark theme)
+  //   - country tiles: Cool 4 (#EFDE0F)
+  //   - bubbles: Logo Yellow 40% + Logo Orange 20% with saturated strokes
+  // ============================================================
+
+  window.addEventListener('error', (e) => {
+    const box = document.getElementById('loading');
+    if (!box) return;
+    box.innerHTML = `
+      <div style="max-width:440px; padding:24px; color:#f58221; text-align:left">
+        <div style="font-weight:600; font-size:13px; margin-bottom:8px">Runtime error</div>
+        <pre style="font-size:11px; white-space:pre-wrap; color:rgba(14,25,55,0.65)">${(e.error && e.error.stack) || e.message || e}</pre>
+      </div>`;
+    box.classList.remove('hide');
+  });
+
+  const PAL = {
+    darkBlue:    '#0e1937',
+    cool2:       '#46c5de',
+    cool4:       '#efde0f',     /* Sunstone Cool 4, from brand doc */
+    cool6:       '#266680',
+    coolGreyL:   '#f4f4f4',
+    yellow:      '#fad604',
+    yellow40:    '#fdef9b',
+    orange:      '#f58221',
+    orange20:    '#fde6d3',
+    orangeAlt:   '#ff9055',
+  };
+
+  const FMT = new Intl.NumberFormat('en-US');
+  const fmt = (n) => n == null ? '—' : FMT.format(n);
+  const fmtPct = (p) => p == null ? '—'
+    : (p > 0 ? '+' : '') + p.toFixed(Math.abs(p) < 1 ? 2 : 1) + '%';
+
+  const flagEmoji = (iso) => {
+    if (!iso || iso.length !== 2) return '🏳';
+    const A = 127397;
+    const u = iso.toUpperCase();
+    if (!/^[A-Z]{2}$/.test(u)) return '🏳';
+    return String.fromCodePoint(A + u.charCodeAt(0)) +
+           String.fromCodePoint(A + u.charCodeAt(1));
+  };
+
+  const state = {
+    theme: localStorage.getItem('theme') || 'light',
+    rotate: true,
+    scale: 'sqrt',
+    active: null,
+    hover: null,
+  };
+
+  let DATA = null, GEO = null;
+  let BY_CODE = new Map();
+  let MAX_AMOUNT = 1;
+  let globe = null;
+
+  // apply persisted theme BEFORE render so initial paint matches
+  document.body.dataset.theme = state.theme;
+  updateThemeIcon();
+
+  Promise.all([
+    // cache-bust: force the browser to re-fetch on every reload. Otherwise
+    // Chrome/Safari will happily serve a stale data.json even after a rebuild.
+    fetch('./data.json?t=' + Date.now(),       { cache: 'no-store' }).then(r => r.json()),
+    fetch('./countries.geojson?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()),
+  ]).then(([data, geo]) => {
+    DATA = data;
+    GEO = geo.features;
+    BY_CODE = new Map(data.countries.map(c => [c.code, c]));
+
+    const amounts = data.countries.flatMap(c => [
+      c.years['2024'] && c.years['2024'].amount, c.years['2026'] && c.years['2026'].amount,
+    ]).filter(x => x && x > 0).sort((a, b) => a - b);
+    // Use the TRUE maximum so bubble area stays proportional to school count
+    // across the whole range. (An earlier p97 cap made every top-10 country
+    // render at identical max size — India & Pakistan were indistinguishable
+    // even though India reports ~6× more schools.)
+    MAX_AMOUNT = amounts[amounts.length - 1] || 1e6;
+
+    initGlobe();
+    populateHud();
+    wireControls();
+    setTimeout(() => document.getElementById('loading').classList.add('hide'), 380);
+    // Auto-open the "About this dataset" card so a first-time visitor reads
+    // the methodology caveat before exploring. Fires after the loader is
+    // fully hidden so it slides in over the live globe. Dismissed via the
+    // × button or Esc.
+    setTimeout(() => showInfoModal(), 900);
+  }).catch(err => {
+    document.getElementById('loading').innerHTML = `
+      <div style="text-align:center; color:${PAL.orange}; max-width:420px; padding:24px">
+        <div style="font-weight:600; font-size:14px; margin-bottom:8px">Unable to load data</div>
+        <div style="font-size:11px; color:rgba(14,25,55,0.6)">${err.message}</div>
+        <div style="font-size:10px; margin-top:14px; color:rgba(14,25,55,0.4)">
+          Serve via <code>python3 -m http.server</code> so data.json / countries.geojson resolve.
+        </div>
+      </div>`;
+  });
+
+  // sqrt → bubble AREA is proportional to school count (correct for bubble
+  // charts). log is offered as a toggle for when you want to compress the
+  // high end so mid-tier countries are easier to compare.
+  function sizeT(n) {
+    if (!n || n <= 0) return 0;
+    const cap = Math.min(n, MAX_AMOUNT);
+    if (state.scale === 'sqrt') return Math.sqrt(cap) / Math.sqrt(MAX_AMOUNT);
+    return Math.log10(cap + 1) / Math.log10(MAX_AMOUNT + 1);
+  }
+
+  function ringPx(n) {
+    if (!n || n <= 0) return 0;
+    const t = sizeT(n);
+    // Area ∝ amount means: r(10) ≈ 4.2 px, r(10k) ≈ 9 px, r(1M) ≈ 74 px.
+    // Small countries stay visible (clamped ≥ 4 px) while India/China
+    // occupy ~4× Pakistan's area, ~360× Andorra's area.
+    const MIN = 4, MAX = 74;
+    return MIN + t * (MAX - MIN);
+  }
+
+  // ---- globe init ----
+  function oceanColor() {
+    // light: #F4F4F4 sphere on white page; dark: #5F6472 slate sphere on navy page
+    return state.theme === 'dark' ? '#5f6472' : '#f4f4f4';
+  }
+
+  /**
+   * Read the live CSS custom properties that define the 2024/2026 bubble
+   * colours. The vars are theme-aware, so anything that renders from JS
+   * (tooltip dots, mini-chart points & line) stays in sync when the user
+   * toggles dark/light.
+   */
+  function bubblePalette() {
+    const s = getComputedStyle(document.body);
+    return {
+      y24Fill:   s.getPropertyValue('--ring-2024-fill').trim(),
+      y24Stroke: s.getPropertyValue('--ring-2024-stroke').trim(),
+      y26Fill:   s.getPropertyValue('--ring-2026-fill').trim(),
+      y26Stroke: s.getPropertyValue('--ring-2026-stroke').trim(),
+    };
+  }
+  function tileColor() {
+    // continents — navy in dark mode (same as page; teal ocean carves shape);
+    // warm-grey-l in light mode (#E0D8C9, warm paper on #F4F4F4 ocean)
+    return state.theme === 'dark' ? '#0e1937' : '#e0d8c9';
+  }
+  function tileHoverColor() {
+    return state.theme === 'dark' ? '#1a274e' : '#c8bda5';
+  }
+  function borderColor() {
+    return state.theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(14,25,55,0.05)';
+  }
+  function borderHover() {
+    return state.theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(14,25,55,0.22)';
+  }
+
+  function initGlobe() {
+    const el = document.getElementById('globe');
+
+    globe = Globe()
+      .backgroundColor('rgba(0,0,0,0)')
+      .globeImageUrl(null)          // make sure no default earth texture sneaks in
+      .bumpImageUrl(null)
+      .showAtmosphere(false)
+      .polygonsData(GEO)
+      .polygonAltitude(0.004)
+      .polygonCapColor(d => d === state.hover ? tileHoverColor() : tileColor())
+      .polygonSideColor(() => 'rgba(0, 0, 0, 0)')
+      .polygonStrokeColor(d => d === state.hover ? borderHover() : borderColor())
+      .polygonLabel(() => '')
+      .polygonsTransitionDuration(180)
+      .onPolygonHover(poly => {
+        state.hover = poly || null;
+        refreshPolygons();
+        const rec = poly ? BY_CODE.get(poly.properties.ISO_A2) : null;
+        if (rec) {
+          showTip(rec, poly.properties);
+          document.body.style.cursor = 'pointer';
+          globe.controls().autoRotate = false;
+        } else if (poly) {
+          const tip = document.getElementById('tip');
+          tip.innerHTML = `
+            <div class="tip-country">${poly.properties.NAME || poly.properties.ISO_A2}</div>
+            <div class="tip-row" style="color: var(--ink-4)">no data yet</div>`;
+          tip.classList.add('visible');
+          positionTip();
+          document.body.style.cursor = 'pointer';
+          globe.controls().autoRotate = false;
+        } else {
+          hideTip();
+          document.body.style.cursor = 'default';
+          if (state.rotate && !state.active) globe.controls().autoRotate = true;
+        }
+      })
+      .onPolygonClick(poly => {
+        const rec = BY_CODE.get(poly.properties.ISO_A2);
+        if (rec) openDetail(rec, poly.properties);
+        else globe.pointOfView({
+          lat: poly.properties.LABEL_Y,
+          lng: poly.properties.LABEL_X,
+          altitude: 1.6,
+        }, 900);
+      });
+
+    globe(el);
+    paintOcean();
+
+    buildMarkerLayer();
+
+    globe.pointOfView({ lat: 18, lng: 6, altitude: 2.6 }, 0);
+
+    const ctl = globe.controls();
+    ctl.autoRotate = true;
+    ctl.autoRotateSpeed = 0.28;
+    ctl.enableDamping = true;
+    ctl.dampingFactor = 0.08;
+    ctl.minDistance = 180;
+    ctl.maxDistance = 600;
+
+    window.addEventListener('resize', () => {
+      globe.width(window.innerWidth).height(window.innerHeight);
+    });
+    globe.width(window.innerWidth).height(window.innerHeight);
+
+    startMarkerVisibilityLoop();
+    document.addEventListener('mousemove', trackTip);
+  }
+
+  function paintOcean() {
+    const mat = globe.globeMaterial();
+    const col = oceanColor();
+    // globe.gl uses a MeshPhongMaterial with directional + ambient lights.
+    // If we set both `color` (diffuse) and `emissive` to the ocean colour,
+    // the shader adds them and clips to white for any colour brighter than
+    // ~50% luminance. Route the colour through `emissive` only and zero
+    // out diffuse/specular so the sphere renders at exactly the RGB we
+    // ask for.
+    mat.color.set('#000000');
+    if (mat.emissive) mat.emissive.set(col);
+    if (mat.specular) mat.specular.set('#000000');
+    mat.shininess = 0;
+    mat.map = null;
+    mat.bumpMap = null;
+    mat.emissiveMap = null;
+    mat.needsUpdate = true;
+  }
+
+  function refreshPolygons() {
+    globe.polygonCapColor(globe.polygonCapColor());
+    globe.polygonStrokeColor(globe.polygonStrokeColor());
+  }
+
+  // ---- concentric bubble markers ----
+  function buildMarkerLayer() {
+    const centroids = new Map();
+    for (const f of GEO) {
+      const p = f.properties;
+      if (p.ISO_A2 && p.LABEL_Y != null && p.LABEL_X != null) {
+        centroids.set(p.ISO_A2, { lat: p.LABEL_Y, lon: p.LABEL_X });
+      }
+    }
+
+    const rows = [];
+    for (const c of DATA.countries) {
+      const has24 = c.years['2024'] && c.years['2024'].amount;
+      const has26 = c.years['2026'] && c.years['2026'].amount;
+      if (!has24 && !has26) continue;
+      const coord = centroids.get(c.code) || { lat: c.lat, lon: c.lon };
+      rows.push({ code: c.code, lat: coord.lat, lon: coord.lon });
+    }
+
+    globe
+      .htmlElementsData(rows)
+      .htmlLat(d => d.lat)
+      .htmlLng(d => d.lon)
+      .htmlAltitude(0.012)
+      .htmlTransitionDuration(320)
+      .htmlElement(d => buildMarker(d));
+  }
+
+  function buildMarker(d) {
+    const c = BY_CODE.get(d.code);
+    const amt24 = c.years['2024'] && c.years['2024'].amount;
+    const amt26 = c.years['2026'] && c.years['2026'].amount;
+    const r24 = ringPx(amt24);
+    const r26 = ringPx(amt26);
+
+    const el = document.createElement('div');
+    el.className = 'marker';
+    el.dataset.code = c.code;
+
+    // Two solid overlapping disks, one per collection. Bigger renders
+    // underneath; smaller sits on top so it's always visible inside the
+    // bigger one. Stroke colour (yellow / orange) identifies the year.
+    // Re-check quality → dashed stroke.
+    const q24 = c.years['2024'] && c.years['2024'].quality;
+    const q26 = c.years['2026'] && c.years['2026'].quality;
+    const recheck = (q) => q && /re-?check/i.test(q);
+
+    const rings = [];
+    if (r24 > 0) rings.push({ d: 2 * r24, kind: 'y24', amt: amt24, recheck: recheck(q24) });
+    if (r26 > 0) rings.push({ d: 2 * r26, kind: 'y26', amt: amt26, recheck: recheck(q26) });
+    rings.sort((a, b) => b.d - a.d);   // biggest first (renders underneath)
+
+    rings.forEach((r, i) => {
+      const ring = document.createElement('div');
+      ring.className = `ring ${r.kind}${r.recheck ? ' recheck' : ''}`;
+      ring.style.width  = r.d + 'px';
+      ring.style.height = r.d + 'px';
+      ring.style.zIndex = String(i + 2);   // smaller (drawn last) on top
+      el.appendChild(ring);
+    });
+
+    el.addEventListener('mouseenter', () => {
+      el.classList.add('hover');
+      showTip(c, null);
+      globe.controls().autoRotate = false;
+    });
+    el.addEventListener('mouseleave', () => {
+      el.classList.remove('hover');
+      hideTip();
+      if (state.rotate && !state.active) globe.controls().autoRotate = true;
+    });
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openDetail(c, null);
+    });
+
+    return el;
+  }
+
+  // hide back-facing markers with a camera-direction dot product
+  function startMarkerVisibilityLoop() {
+    function tick() {
+      const cam = globe.camera();
+      const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
+      const camLen = Math.hypot(cx, cy, cz) || 1;
+      document.querySelectorAll('.marker').forEach(n => {
+        const rec = BY_CODE.get(n.dataset.code);
+        if (!rec) return;
+        const p = globe.getCoords(rec.lat, rec.lon, 0);
+        const pLen = Math.hypot(p.x, p.y, p.z) || 1;
+        const dot = (cx*p.x + cy*p.y + cz*p.z) / (camLen * pLen);
+        let op;
+        if (dot >= 0.18) op = 1;
+        else if (dot >= -0.02) op = Math.max(0, (dot + 0.02) / 0.20);
+        else op = 0;
+        n.style.opacity = op.toFixed(3);
+        n.style.pointerEvents = op > 0.5 ? 'auto' : 'none';
+      });
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ---- tooltip ----
+  let tipMouseX = 0, tipMouseY = 0;
+  function trackTip(e) {
+    tipMouseX = e.clientX;
+    tipMouseY = e.clientY;
+    const tip = document.getElementById('tip');
+    if (tip.classList.contains('visible')) positionTip();
+  }
+  function positionTip() {
+    const tip = document.getElementById('tip');
+    const margin = 14;
+    const w = tip.offsetWidth || 220;
+    const h = tip.offsetHeight || 80;
+    let nx = tipMouseX + margin;
+    let ny = tipMouseY + margin;
+    if (nx + w > window.innerWidth - 6)  nx = tipMouseX - w - margin;
+    if (ny + h > window.innerHeight - 6) ny = tipMouseY - h - margin;
+    tip.style.left = nx + 'px';
+    tip.style.top  = ny + 'px';
+  }
+  function showTip(rec, polyProps) {
+    const tip = document.getElementById('tip');
+    const amt24 = rec.years['2024'] && rec.years['2024'].amount;
+    const amt26 = rec.years['2026'] && rec.years['2026'].amount;
+    const y24raw = rec.years['2024'] && rec.years['2024'].year_raw;
+    const y26raw = rec.years['2026'] && rec.years['2026'].year_raw;
+    const growth = (amt24 != null && amt26 != null) ? (amt26 - amt24) : null;
+    const growthColor = growth == null ? PAL.cool6 : growth > 0 ? PAL.orange : PAL.cool6;
+    const name = rec.name || (polyProps && polyProps.NAME) || rec.code;
+    const bp = bubblePalette();
+
+    tip.innerHTML = `
+      <div class="tip-country"><span>${flagEmoji(rec.code)}</span>${name}</div>
+      ${amt24 ? `<div class="tip-row">
+        <span class="tip-dot" style="background:${bp.y24Fill}; border:2px solid ${bp.y24Stroke}"></span>
+        <span class="year-chip">${y24raw || '—'}</span>
+        <b>${fmt(amt24)}</b>
+      </div>` : ''}
+      ${amt26 ? `<div class="tip-row">
+        <span class="tip-dot" style="background:${bp.y26Fill}; border:2px solid ${bp.y26Stroke}"></span>
+        <span class="year-chip">${y26raw || '—'}</span>
+        <b>${fmt(amt26)}</b>
+      </div>` : ''}
+      ${growth != null ? `<div class="tip-row" style="margin-top:4px; color:${growthColor}">
+        ${growth>=0?'▲':'▼'} ${fmt(Math.abs(growth))} · ${fmtPct(rec.reported_diff_pct)}
+      </div>` : ''}
+    `;
+    tip.classList.add('visible');
+    positionTip();
+  }
+  function hideTip() {
+    document.getElementById('tip').classList.remove('visible');
+  }
+
+  // ---- detail card ----
+  function qClass(q) {
+    if (!q) return 'default';
+    const s = q.toLowerCase();
+    if (s.includes('excel'))  return 'excel';
+    if (s.includes('good'))   return 'good';
+    if (s.includes('okay'))   return 'okay';
+    if (s.includes('recheck') || s.includes('re-check')) return 'recheck';
+    return 'default';
+  }
+
+  function yearBlock(label, klass, p) {
+    if (!p) {
+      return `
+        <div class="year-block ${klass}">
+          <div class="year-block-head">
+            <span class="year-block-label">${label}</span>
+            <span class="reported-year" style="color: var(--ink-4); background: transparent">no report</span>
+          </div>
+          <div class="year-amount" style="color: var(--ink-4)">—</div>
+          <div class="year-amount-label">schools</div>
+        </div>`;
+    }
+    const qc = qClass(p.quality);
+    const bd = [];
+    if (p.public != null) bd.push(['Public', p.public]);
+    if (p.private != null) bd.push(['Private', p.private]);
+    if (p.other_type != null) bd.push(['Other type', p.other_type]);
+    if (p.preschool != null) bd.push(['Pre-school', p.preschool]);
+    if (p.primary != null) bd.push(['Primary', p.primary]);
+    if (p.secondary != null) bd.push(['Secondary', p.secondary]);
+    if (p.other_combined != null) bd.push(['Combined', p.other_combined]);
+    return `
+      <div class="year-block ${klass}">
+        <div class="year-block-head">
+          <span class="year-block-label">${label}</span>
+          <span class="reported-year">${p.year_raw || (p.year || '—')}</span>
+        </div>
+        <div class="year-amount">${fmt(p.amount)}</div>
+        <div class="year-amount-label">schools ${p.quality ? `· <span class="q-chip ${qc}">${p.quality}</span>` : ''}</div>
+        ${bd.length ? `<div class="year-breakdown">
+          ${bd.map(([k, v]) => `
+            <div class="row">
+              <span class="k">${k}</span>
+              <span class="v">${fmt(v)}</span>
+            </div>
+          `).join('')}
+        </div>` : ''}
+        ${p.source ? `<div class="source"><a href="${p.source}" target="_blank" rel="noopener" title="${p.source}">${p.source_tag || p.source}</a></div>` : ''}
+        ${p.notes ? `<div class="notes">${p.notes}</div>` : ''}
+      </div>`;
+  }
+
+  // ---- mini 2-point line chart for the drawer ----
+  // Structured so a future V2 pass can feed a 6-point series with no API change.
+  function miniChart(c) {
+    const points = [];
+    for (const key of Object.keys(c.years).sort()) {
+      const y = c.years[key];
+      if (!y || y.amount == null) continue;
+      points.push({
+        collection: key,
+        year: y.year || null,
+        yearRaw: y.year_raw || key,
+        amount: y.amount,
+        kind: key === '2024' ? 'y24' : 'y26',
+      });
+    }
+    if (points.length < 2) return '';
+
+    // x = evenly spaced, y = amount (linear; precise integers required)
+    const W = 320, H = 120, PL = 40, PR = 16, PT = 14, PB = 24;
+    const innerW = W - PL - PR;
+    const innerH = H - PT - PB;
+    const minAmt = Math.min(...points.map(p => p.amount));
+    const maxAmt = Math.max(...points.map(p => p.amount));
+    const yPad = Math.max(1, (maxAmt - minAmt) * 0.12);
+    const yLo = Math.max(0, minAmt - yPad);
+    const yHi = maxAmt + yPad;
+
+    const xOf = (i) => PL + (innerW * (points.length === 1 ? 0.5 : i / (points.length - 1)));
+    const yOf = (v) => PT + innerH * (1 - (v - yLo) / Math.max(1, yHi - yLo));
+
+    const path = points.map((p, i) => (i === 0 ? 'M' : 'L') + xOf(i) + ',' + yOf(p.amount)).join(' ');
+    const area = path + ` L${xOf(points.length - 1)},${PT + innerH} L${xOf(0)},${PT + innerH} Z`;
+
+    // y-axis tick (two ticks: min and max, exact integers)
+    const axis = [yHi, yLo].map(v => {
+      const y = yOf(v);
+      return `
+        <line x1="${PL - 4}" x2="${PL}" y1="${y}" y2="${y}" stroke="currentColor" stroke-opacity="0.3"/>
+        <text x="${PL - 7}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="9" font-family="JetBrains Mono, monospace" fill="currentColor" opacity="0.85">${fmt(Math.round(v))}</text>`;
+    }).join('');
+
+    const bp = bubblePalette();
+    const dots = points.map((p, i) => {
+      const cx = xOf(i), cy = yOf(p.amount);
+      const fill   = p.kind === 'y24' ? bp.y24Fill   : bp.y26Fill;
+      const stroke = p.kind === 'y24' ? bp.y24Stroke : bp.y26Stroke;
+      return `
+        <g>
+          <circle cx="${cx}" cy="${cy}" r="6" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+          <text x="${cx}" y="${cy - 12}" text-anchor="middle" font-size="10" font-family="JetBrains Mono, monospace" font-weight="500" fill="currentColor">${fmt(p.amount)}</text>
+          <text x="${cx}" y="${H - 6}" text-anchor="middle" font-size="9" font-family="JetBrains Mono, monospace" fill="currentColor" opacity="0.85">${p.yearRaw}</text>
+        </g>`;
+    }).join('');
+
+    // Line + area fill follow the 2026 colour (the trend endpoint)
+    const lineCol = bp.y26Stroke;
+    return `
+      <div class="mini-chart">
+        <div class="mini-chart-title">Schools over time</div>
+        <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-label="Schools reported per collection">
+          <defs>
+            <linearGradient id="miniGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="${lineCol}" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="${lineCol}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- subtle baseline -->
+          <line x1="${PL}" x2="${W - PR}" y1="${PT + innerH}" y2="${PT + innerH}" stroke="currentColor" stroke-opacity="0.15"/>
+          ${axis}
+          <path d="${area}" fill="url(#miniGrad)"/>
+          <path d="${path}" fill="none" stroke="${lineCol}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          ${dots}
+        </svg>
+        <div class="mini-chart-caption">Two-point series for now; expands to six years in V2.</div>
+      </div>`;
+  }
+
+  function openDetail(c, polyProps) {
+    state.active = c.code;
+    globe.controls().autoRotate = false;
+    const drawer = document.getElementById('detail');
+
+    const amt24 = c.years['2024'] && c.years['2024'].amount;
+    const amt26 = c.years['2026'] && c.years['2026'].amount;
+    const growth = (amt24 != null && amt26 != null) ? (amt26 - amt24) : null;
+    let cls = 'flat', arrow = '→', lab = 'no comparison';
+    if (growth != null) {
+      if (growth > 0)      { cls = 'up';   arrow = '▲'; lab = 'more in 2026 report'; }
+      else if (growth < 0) { cls = 'down'; arrow = '▼'; lab = 'fewer in 2026 report'; }
+      else                 { cls = 'flat'; arrow = '→'; lab = 'unchanged'; }
+    }
+
+    drawer.innerHTML = `
+      <div class="detail-head">
+        <div class="detail-flag-row">
+          <div class="detail-flag">${flagEmoji(c.code)}</div>
+          <div>
+            <div class="detail-title">${c.name || (polyProps && polyProps.NAME) || c.code}</div>
+            <div class="detail-sub">${c.code}${c.alpha3 ? ' · ' + c.alpha3 : ''}${c.year_anomaly ? ' <span class="anomaly-badge">year anomaly</span>' : ''}</div>
+          </div>
+        </div>
+        <button class="detail-close" id="detail-close" aria-label="Close">✕</button>
+      </div>
+
+      ${growth != null ? `
+        <div class="delta-hero ${cls}">
+          <div>
+            <div class="delta-big">${arrow} ${fmtPct(c.reported_diff_pct)}</div>
+            <div class="delta-label">${lab}</div>
+          </div>
+          <div class="delta-abs">${growth >= 0 ? '+' : '−'}${fmt(Math.abs(growth))}</div>
+        </div>` : '<div style="height: 12px"></div>'}
+
+      ${miniChart(c)}
+
+      ${yearBlock('2024 collection', 'y24', c.years['2024'])}
+      ${yearBlock('2026 collection', 'y26', c.years['2026'])}
+    `;
+    drawer.classList.add('open');
+    document.getElementById('detail-close').addEventListener('click', closeDetail);
+
+    globe.pointOfView({ lat: c.lat, lng: c.lon, altitude: 1.8 }, 900);
+  }
+
+  function closeDetail() {
+    document.getElementById('detail').classList.remove('open');
+    state.active = null;
+    if (state.rotate) globe.controls().autoRotate = true;
+  }
+
+  function populateHud() {
+    const m = DATA.meta;
+    document.getElementById('sp-countries').textContent = m.total_countries;
+    document.getElementById('sp-total').textContent = fmt(m.total_schools_2026);
+    if (m.build_date) {
+      document.getElementById('footer-build-date').textContent = 'Updated ' + m.build_date;
+    }
+    const delta = m.total_schools_2026 - m.total_schools_2024;
+    const deltaPct = m.total_schools_2024 ? (delta / m.total_schools_2024 * 100) : 0;
+    const el = document.getElementById('sp-delta');
+    const cls = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+    const ar  = delta > 0 ? '▲' : delta < 0 ? '▼' : '→';
+    el.classList.add(cls);
+    el.innerHTML = `${ar} ${fmtPct(deltaPct)}`;
+  }
+
+  // ---- theme ----
+  function updateThemeIcon() {
+    const svg = document.getElementById('theme-icon');
+    if (!svg) return;
+    if (state.theme === 'dark') {
+      // sun
+      svg.innerHTML = `
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round" />`;
+    } else {
+      // moon
+      svg.innerHTML = `<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke-linejoin="round" stroke-linecap="round" />`;
+    }
+    const btn = document.getElementById('btn-theme');
+    if (btn) {
+      const label = state.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+    }
+  }
+
+  function setTheme(next) {
+    state.theme = next;
+    document.body.dataset.theme = next;
+    localStorage.setItem('theme', next);
+    updateThemeIcon();
+    if (globe) {
+      paintOcean();
+      refreshPolygons();
+    }
+  }
+
+  // ---- controls ----
+  function wireControls() {
+    const search  = document.getElementById('search');
+    const results = document.getElementById('search-results');
+
+    search.addEventListener('input', (e) => runSearch(e.target.value));
+    search.addEventListener('focus', () => {
+      if (search.value.trim()) runSearch(search.value);
+    });
+    // close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-wrap')) {
+        results.classList.remove('open');
+      }
+    });
+    // keyboard: `/` focuses search, Esc clears search or closes the drawer
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== search) {
+        e.preventDefault();
+        search.focus();
+      } else if (e.key === 'Escape') {
+        if (document.activeElement === search) {
+          search.value = '';
+          results.classList.remove('open');
+          search.blur();
+        } else if (state.active) {
+          // close the detail / info drawer
+          closeDetail();
+        }
+      }
+    });
+
+    function runSearch(q) {
+      q = q.trim().toLowerCase();
+      if (!q) { results.classList.remove('open'); return; }
+      const matches = DATA.countries
+        .filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().startsWith(q))
+        .slice(0, 8);
+      if (!matches.length) {
+        results.innerHTML = `<div style="padding:14px; color:var(--ink-4); font-size:12px">No match for "${q}"</div>`;
+      } else {
+        results.innerHTML = matches.map(c => `
+          <div class="search-result" data-code="${c.code}">
+            <span><span class="flag">${flagEmoji(c.code)}</span>${c.name}</span>
+            <span class="code">${c.code}</span>
+          </div>
+        `).join('');
+        results.querySelectorAll('.search-result').forEach(r => {
+          r.addEventListener('click', () => {
+            const c = BY_CODE.get(r.dataset.code);
+            if (c) {
+              openDetail(c, null);
+              search.value = '';
+              results.classList.remove('open');
+              search.blur();
+            }
+          });
+        });
+      }
+      results.classList.add('open');
+    }
+
+    document.getElementById('btn-rotate').addEventListener('click', (e) => {
+      state.rotate = !state.rotate;
+      globe.controls().autoRotate = state.rotate;
+      const btn = e.currentTarget;
+      btn.classList.toggle('active', state.rotate);
+      const label = state.rotate ? 'Pause auto-rotation' : 'Resume auto-rotation';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+    });
+
+    document.getElementById('btn-scale').addEventListener('click', (e) => {
+      state.scale = state.scale === 'sqrt' ? 'log' : 'sqrt';
+      e.currentTarget.classList.toggle('active', state.scale === 'log');
+      globe.htmlElementsData([]);
+      requestAnimationFrame(() => buildMarkerLayer());
+    });
+
+    document.getElementById('btn-theme').addEventListener('click', (e) => {
+      setTheme(state.theme === 'dark' ? 'light' : 'dark');
+      const label = state.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+      e.currentTarget.setAttribute('aria-label', label);
+      e.currentTarget.setAttribute('title', label);
+    });
+
+    document.getElementById('btn-info').addEventListener('click', showInfoModal);
+  }
+
+  function showInfoModal() {
+    const m = DATA.meta;
+    const host = document.getElementById('detail');
+    state.active = '__info';
+    globe.controls().autoRotate = false;
+    host.innerHTML = `
+      <div class="detail-head">
+        <div class="detail-flag-row">
+          <img src="sunstone-logo.png" alt="" style="width: 32px; height: 32px; object-fit: contain" />
+          <div>
+            <div class="detail-title" style="font-size: 21px">About this dataset</div>
+            <div class="detail-sub">Sunstone Institute · 2024 & 2026 collections</div>
+          </div>
+        </div>
+        <button class="detail-close" id="detail-close" aria-label="Close">✕</button>
+      </div>
+
+      <div style="margin-top: 18px; font-size: 15px; color: var(--ink-2); line-height: 1.55">
+        This dataset is an independent collection, compiled from national statistical offices and ministries of education to bring together the amount of schools in the world, by <a href="https://sunstone.institute/" target="_blank" rel="noopener" style="color: var(--logo-orange); text-decoration: none; border-bottom: 1px dashed currentColor">Sunstone Institute</a>. The dataset is a continuous effort and two collections have been done so far (2024, 2026). Each country carries two overlapping bubbles at its label point — a <b>light blue</b> disk for 2024 and a <b>dark blue</b> disk for 2026. The size of the bubble corresponds to the amount of schools in that country. Even though the dataset was compiled in 2024 and 2026, the <b>reporting year</b> for each country varies depending on their reporting frequency and availability. The reporting year can be seen next to every amount value, so you know <em>when</em> the figure refers to, not when it was collected.
+        <br /><br />
+        The difference (delta) is labelled <b>reported difference</b> between the 2024 and 2026 collections. It should not be interpreted directly as a growth or shrinkage of schools, as both years used different methodologies. Moreover, different sources can report different numbers over the years, which should be considered.
+        <br /><br />
+        <a href="methodology.html" target="_blank" rel="noopener" style="color: var(--cool-6); text-decoration: none; border-bottom: 1px dashed currentColor">Full methodology →</a>
+      </div>
+
+      <div style="margin-top: 18px;">
+        <div class="year-block" style="border-left: 0">
+          <div class="year-block-head">
+            <span class="year-block-label" style="color: var(--cool-6)">Coverage</span>
+          </div>
+          <div class="year-breakdown" style="border: 0; padding-top: 0; margin-top: 0">
+            <div class="row"><span class="k">Countries</span><span class="v">${m.total_countries}</span></div>
+            <div class="row"><span class="k">With both years</span><span class="v">${m.countries_with_both}</span></div>
+            <div class="row"><span class="k">Schools · 2024</span><span class="v">${fmt(m.total_schools_2024)}</span></div>
+            <div class="row"><span class="k">Schools · 2026</span><span class="v">${fmt(m.total_schools_2026)}</span></div>
+          </div>
+        </div>
+
+        <!-- Year-anomaly detail lives in methodology.html under "Known anomalies"; the
+             info modal just links to it via the "Full methodology →" button above. -->
+
+      </div>
+    `;
+    host.classList.add('open');
+    document.getElementById('detail-close').addEventListener('click', closeDetail);
+  }
+  </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Methodology · School Census · Sunstone Institute</title>
+  <meta name="description" content="Methodology for the Sunstone Institute School Census — sources, data-quality tiers, anomalies, corrections process." />
+  <link rel="icon" href="sunstone-logo.png" type="image/png" />
+  <!-- Sunstone Design System -->
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* alias our local semantic names onto Sunstone tokens */
+    :root {
+      --logo-yellow: var(--color-yellow);
+      --yellow-40:   var(--color-yellow-40);
+      --logo-orange: var(--color-orange);
+      --orange-20:   var(--color-orange-20);
+      --cool-2:      var(--color-cyan);
+      --cool-6:      var(--color-teal);
+      --cool-grey-light: var(--color-cool-grey-l);
+      --ink-1: var(--color-navy);
+      --ink-2: rgba(14, 25, 55, 0.78);
+      --ink-3: rgba(14, 25, 55, 0.54);
+      --ink-4: rgba(14, 25, 55, 0.32);
+      --ink-5: rgba(14, 25, 55, 0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(250, 214, 4, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 100%, rgba(245, 130, 33, 0.05) 0%, transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, var(--cool-grey-light) 100%);
+      color: var(--ink-1);
+      font-family: var(--font-sans);        /* DM Sans per Sunstone DS */
+      font-size: var(--fs-body);
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      letter-spacing: 0;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 64px 28px 120px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 44px;
+    }
+    header img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+    }
+    /* DS spec: all headings Source Serif 4 Regular (400). Base styles from
+       tokens.css cover font-family + weight; only size and margin here. */
+    header h1 {
+      font-size: var(--fs-h3);
+      line-height: 1.2;
+    }
+    header .sub {
+      font-size: 11px;
+      color: var(--ink-4);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 3px;
+    }
+    header a {
+      color: inherit;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--cool-6);
+      text-decoration: none;
+      border-bottom: 1px dashed currentColor;
+      letter-spacing: 0.02em;
+    }
+    .back:hover { color: var(--logo-orange); }
+
+    /* Section titles — DS H2 */
+    h2 {
+      font-size: var(--fs-h2);
+      margin: 44px 0 14px;
+    }
+    /* Sub-section eyebrow styled as DS micro label, not a heading */
+    h3 {
+      font-family: var(--font-sans);
+      font-size: var(--fs-micro);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-orange);
+      margin: 24px 0 8px;
+    }
+    p {
+      font-size: var(--fs-body);
+      color: var(--ink-2);
+      margin-bottom: 14px;
+    }
+
+    .hero-note {
+      padding: 18px 22px;
+      margin: 24px 0;
+      border-left: 3px solid var(--logo-orange);
+      background: rgba(245, 130, 33, 0.06);
+      border-radius: 4px;
+      font-size: 14px;
+      color: var(--ink-1);
+    }
+    .hero-note strong { font-weight: 600; }
+
+    .tier-grid {
+      display: grid;
+      grid-template-columns: 120px 1fr 1fr;
+      gap: 12px 16px;
+      margin: 20px 0;
+      font-size: 13px;
+    }
+    .tier-grid .head {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--ink-5);
+    }
+    .tier-grid .label {
+      font-weight: 600;
+    }
+    .tier-grid .row {
+      display: contents;
+    }
+    .tier-grid .row > div {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--ink-5);
+      color: var(--ink-2);
+    }
+
+    .q-chip {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .q-chip.excel   { background: rgba(38, 102, 128, 0.16); color: var(--cool-6); }
+    .q-chip.good    { background: rgba(70, 197, 222, 0.18); color: var(--cool-6); }
+    .q-chip.okay    { background: rgba(250, 214, 4, 0.24); color: #7a6600; }
+    .q-chip.recheck { background: rgba(245, 130, 33, 0.2); color: var(--logo-orange); }
+
+    ul {
+      margin: 10px 0 16px 20px;
+      color: var(--ink-2);
+      font-size: 14px;
+    }
+    ul li { margin-bottom: 6px; }
+
+    a.inline {
+      color: var(--cool-6);
+      text-decoration: none;
+      border-bottom: 1px dashed currentColor;
+    }
+    a.inline:hover { color: var(--logo-orange); }
+
+    .anomaly-list {
+      margin: 14px 0;
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 1px solid rgba(245, 130, 33, 0.3);
+      background: rgba(245, 130, 33, 0.04);
+      font-size: 13px;
+      color: var(--ink-2);
+    }
+    .anomaly-list ul { margin: 8px 0 0 18px; }
+    .anomaly-list strong { color: var(--logo-orange); }
+
+    footer {
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid var(--ink-5);
+      font-size: 11px;
+      color: var(--ink-4);
+      line-height: 1.7;
+    }
+    footer a { color: var(--ink-3); text-decoration: none; border-bottom: 1px dashed currentColor; }
+    footer a:hover { color: var(--logo-orange); }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+
+    <header>
+      <a href="https://sunstone.institute/" target="_blank" rel="noopener">
+        <img src="sunstone-logo.png" alt="Sunstone Institute" />
+        <div>
+          <h1>School Census · Methodology</h1>
+          <div class="sub">Sunstone Institute · independent analysis</div>
+        </div>
+      </a>
+    </header>
+
+    <a class="back" href="index.html">← Back to the globe</a>
+
+    <h2>What this is</h2>
+    <p>
+      The School Census is an independent compilation of the number of schools
+      per country, collected by the Sunstone Institute Data Team from national
+      statistical offices, ministries of education, and a handful of
+      international aggregators. We publish two collections so far: a first
+      pass collected in 2024 and a second, wider pass collected in 2026.
+    </p>
+    <p>
+      The 193 UN member states have been considered for the scope of this
+      dataset.
+    </p>
+
+    <div class="hero-note">
+      <strong>Read the delta with care.</strong> The difference between a
+      country's 2024 and 2026 numbers is labelled a <em>reported difference</em>,
+      not growth. The two collections used different methodologies — for
+      example, the 2026 collection excluded vocational institutes that the
+      2024 collection sometimes included, and some countries changed what they
+      themselves count as a "school". Treat the delta as directional, not
+      precise.
+    </div>
+
+    <h2>Sources</h2>
+    <p>
+      Every per-country number on the globe links to its source. Source
+      preference, in order:
+    </p>
+    <ol style="margin: 10px 0 16px 22px; color: var(--ink-2); font-size: 14px">
+      <li>A national ministry of education's statistical yearbook or official registry.</li>
+      <li>A national statistical office's education section.</li>
+      <li>An international aggregator: UNESCO UIS, World Bank EdStats, OECD.</li>
+      <li>Peer-reviewed or regional-government reports that cite ministry figures.</li>
+      <li>Derived estimates (only when no primary source exists, clearly flagged).</li>
+    </ol>
+
+    <h2>Data quality</h2>
+    <p>
+      Each row in our source CSV carries one of four quality labels. The
+      rubric is <strong>dual-axis</strong> — we look at both the authority of
+      the source and the sophistication of the data format it was published in.
+    </p>
+
+    <div class="tier-grid">
+      <div class="head">Label</div>
+      <div class="head">Source authority</div>
+      <div class="head">Data sophistication</div>
+
+      <div class="row">
+        <div class="label"><span class="q-chip excel">Excel</span></div>
+        <div>Ministry of education, statistical yearbook</div>
+        <div>A clean CSV / Excel / structured data portal</div>
+      </div>
+      <div class="row">
+        <div class="label"><span class="q-chip good">Good</span></div>
+        <div>Ministry, central statistical office, or well-cited aggregator</div>
+        <div>A published PDF report or structured table</div>
+      </div>
+      <div class="row">
+        <div class="label"><span class="q-chip okay">Okay</span></div>
+        <div>Regional government, credible secondary source</div>
+        <div>An inline statement in a news or government webpage</div>
+      </div>
+      <div class="row">
+        <div class="label"><span class="q-chip recheck">Re-check</span></div>
+        <div>Single unverifiable source, or a source flagged for review</div>
+        <div>Any of the above where we suspect a mismatch or gap</div>
+      </div>
+    </div>
+
+    <p>
+      On the globe, countries flagged <span class="q-chip recheck">Re-check</span>
+      render with a dashed outer stroke on their bubble so you can tell at a
+      glance where we're less certain. Everything else uses a solid stroke.
+    </p>
+
+    <h2>Reporting year vs collection year</h2>
+    <p>
+      The two collection labels (<strong>2024</strong>, <strong>2026</strong>)
+      refer to <em>when Sunstone compiled the row</em>, not to the year the
+      source was published. The tooltip and drawer always surface the
+      source's own reporting year (e.g. <code>2022-23</code>, <code>2024-25</code>)
+      next to the count, because that's the year the number actually refers to.
+    </p>
+
+    <h2>Known anomalies</h2>
+    <div class="anomaly-list">
+      <strong>Year reversal — Panama</strong> — for Panama, the 2026 collection
+      cites an <em>older</em> reporting year than the 2024 collection did.
+      This is not a data-quality regression: the 2026 pass replaced the
+      previous secondary source (a news article citing MEDUCA) with the
+      ministry's own 2022 official publication, which is a better and more
+      authoritative source even though its reporting year is earlier.
+      <ul>
+        <li>🇵🇦 Panama — 2024 → 2022 (ministry-direct source, intentional)</li>
+      </ul>
+    </div>
+    <p>
+      Panama shows a small "year anomaly" chip in its country drawer (never
+      on the globe itself, to keep the map clean) so readers know the
+      reporting-year dip is expected rather than an oversight.
+    </p>
+
+    <h2>Corrections</h2>
+    <p>
+      This dataset is open for independent verification. If you spot an error —
+      a missing source, a number that doesn't match the ministry it cites, a
+      mislabelled territory — submit a correction via our
+      <a class="inline" href="https://forms.gle/pyjhZLVHo5nhpKon9" target="_blank" rel="noopener">Form</a>
+      with the country code, the specific figure, and a link to the source you
+      believe is correct. We aim to respond within five business days.
+    </p>
+
+    <h2>Licence &amp; attribution</h2>
+    <p>
+      The compiled dataset is published under
+      <a class="inline" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">Creative Commons Attribution 4.0 (CC BY 4.0)</a>.
+      You may reuse it freely provided you credit Sunstone Institute and link
+      back to this page. Boundaries and country names shown on the globe
+      follow the Natural Earth 1:110 m dataset and do not imply official
+      endorsement or acceptance of any disputed boundary.
+    </p>
+
+    <footer>
+      © 2026 Sunstone Institute ·
+      <a href="https://sunstone.institute/" target="_blank" rel="noopener">sunstone.institute</a> ·
+      <a href="https://forms.gle/pyjhZLVHo5nhpKon9" target="_blank" rel="noopener">Report a correction</a>
+    </footer>
+
+  </div>
+
+</body>
+</html>
